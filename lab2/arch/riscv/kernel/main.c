@@ -5,7 +5,7 @@
 
 
 int main() {
-  puts("ZJU OS LAB  2  Student:3210103803 蒋奕, 3210103796 储宁奕\n");
+  puts("ZJU OS LAB  2  Student:3210103796 储宁奕  3210103803 蒋奕\n");
   #ifdef SJF
     printf("initialize SJF test case....\n");
   #endif
