@@ -5,12 +5,12 @@
 
 void intr_enable(void) {
   // TODO: 设置 sstatus[spie] = 1
-  
+  set_csr(sstatus, 32);
 }
 
 void intr_disable(void) {
   // TODO: 设置 sstatus[spie] = 0
-  
+  clear_csr(sstatus, 32);
 }
 
 void idt_init(void) {
