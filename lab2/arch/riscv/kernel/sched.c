@@ -28,10 +28,17 @@ void task_init(void) {
   for(int i = 0; i < LAB_TEST_NUM; ++i) {
     // TODO
     // initialize task[i]
+    task[i] = (struct task_struct*)kalloc();
     // get the task_struct based on Kernel_Page and i
     // set state = TASK_RUNNING, counter = 0, priority = 5, 
+    task[i]->state = TASK_RUNNING;
+    task[i]->counter = 0;
+    task[i]->priority = 5;
     // blocked = 0, pid = i, thread.sp, thread.ra
-    
+    task[i]->blocked = 0;
+    task[i]->pid = i;
+    task[i]->thread.ra = &__init_sepc;
+    task[i]->thread.sp = (unsigned long long)task[i] + TASK_SIZE;
 
     printf("[PID = %d] Process Create Successfully!\n", task[i]->pid);
   }
