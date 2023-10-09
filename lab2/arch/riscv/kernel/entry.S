@@ -61,11 +61,11 @@ trap_s:
 
 .globl __switch_to
 __switch_to:
-	li    a4,  40 
-	add   a3, a0, a4
-	add   a4, a1, a4
+	li    a4,  40 # a4 = 40
+	add   a3, a0, a4 # a3 = a0 + 40
+	add   a4, a1, a4 # a4 = a1 + 40
 	# TODO: Save context into prev->thread
-
+	
   
 	# TODO: Restore context from next->thread
 
@@ -77,5 +77,6 @@ __switch_to:
 .globl __init_sepc
 __init_sepc:
   	# TODO
-
+	# 初始化任务结构体中的 ra 寄存器，使其指向 test 函数的地址
+    la    ra, test       # 将 test 函数的地址加载到 ra 寄存器
 	sret
