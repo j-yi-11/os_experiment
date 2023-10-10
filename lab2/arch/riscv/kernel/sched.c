@@ -97,7 +97,11 @@ void schedule(void) {
   // TODO
   unsigned long min_counter = 0x7FFFFFF;
   char all_task_counter_is_zero = 1;
-  for(int i = 0 ; i < NR_TASKS ; i++){
+  // 遍历进程指针数组 `task`，
+  // 从 `LAST_TASK` 至 `FIRST_TASK`，
+  // 在所有运行状态(TASK_RUNNING)下的进程剩余运行时间最小的进程作为下一个执行的进程。
+  // 若剩余运行时间相同，则按照遍历的顺序优先选择。
+  for(int i = NR_TASKS - 1; i >= 0 ; i--){
     if(task[i] != 0){ //NULL 
       if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
         all_task_counter_is_zero = 0;
@@ -154,7 +158,7 @@ void schedule(void) {
   unsigned char next;
   // TODO
   unsigned long long min_counter = 0x7FFFFFF;
-  unsigned long long high_priority = 1;
+  unsigned long long high_priority = 5;
   char all_task_counter_is_zero = 1;
   // 遍历进程指针数组 task，从 LAST_TASK 至 FIRST_TASK，调度规则如下：
   // • 高优先级的进程，优先被运行（值越小越优先）。
@@ -162,23 +166,24 @@ void schedule(void) {
   // 如果所有运行状态下的进程剩余运行时间都为 0，则通过 init_test_case() 函数重新为进程分配运行时间与优先级，然后再次调度。
   next = NR_TASKS - 1;
   for(int i = NR_TASKS - 1; i >= 0 ;i--){ // 从 LAST_TASK 至 FIRST_TASK
-    if(task[i] != 0){ // no NULL
+    if(task[i] != 0){ // not NULL
       if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
         all_task_counter_is_zero = 0;
-        // find hign pro
+        // find high priority
         if (task[i]->priority > high_priority) {
           high_priority = task[i]->priority;
           next = i;
           break;
-        }else if((task[i]->priority == high_priority) && (task[i]->counter < min_counter)){
+        }
         // find min counter
+        else if((task[i]->priority == high_priority) && (task[i]->counter < min_counter)){
           min_counter = task[i]->counter;
           next = i;
           break;
-        }else if((task[i]->priority == high_priority) && (task[i]->counter == min_counter)){
+        } // else if((task[i]->priority == high_priority) && (task[i]->counter == min_counter)){
           // next = i;
-          break;
-        }        
+          // break;
+        // }        
       }
     }
   }  
