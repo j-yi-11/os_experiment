@@ -101,7 +101,7 @@ void schedule(void) {
   // 从 `LAST_TASK` 至 `FIRST_TASK`，
   // 在所有运行状态(TASK_RUNNING)下的进程剩余运行时间最小的进程作为下一个执行的进程。
   // 若剩余运行时间相同，则按照遍历的顺序优先选择。
-  for(int i = NR_TASKS - 1; i >= 0 ; i--){
+  for(int i = NR_TASKS - 1; i >= 0 ; i--){ // 从 LAST_TASK 至 FIRST_TASK
     if(task[i] != 0){ //NULL 
       if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
         all_task_counter_is_zero = 0;
