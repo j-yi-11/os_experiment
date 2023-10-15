@@ -36,7 +36,7 @@ void clock_init(void) {
   set_csr(sie, 32);
   // 设置第一个时钟中断
   uint64_t current_cycles = get_cycles();
-  ticks = 1;
+  ticks = 0;
   // puts("[DEBUG]:before clock_init \n");
   sbi_call(0,0,current_cycles+timebase,0,0,0,0,0);//sbi_set_timer(current_cycles + timebase);
   // puts("[DEBUG]:after clock_init \n");

@@ -37,7 +37,7 @@ void task_init(void) {
     // blocked = 0, pid = i, thread.sp, thread.ra
     task[i]->blocked = 0;
     task[i]->pid = i;
-    task[i]->thread.ra = &__init_sepc;
+    task[i]->thread.ra = (unsigned long long)__init_sepc;
     task[i]->thread.sp = (unsigned long long)task[i] + PAGE_SIZE;
 
     printf("[PID = %d] Process Create Successfully!\n", task[i]->pid);
@@ -69,6 +69,7 @@ void show_schedule(unsigned char next) {
   }
 }
 
+/*jy : SKF pass*/
 #ifdef SJF
 // simulate the cpu timeslice, which measn a short time frame that gets assigned
 // to process for CPU execution
@@ -80,22 +81,30 @@ void do_timer(void) {
   
   // current process's counter -1, judge whether to schedule or go on.
   // TODO 
-  if(current->counter == 1){
-    current->counter--;// 0
+  if (current == 0) //NULL
+    return;
+  printf("do timer sjf: current->pid = %d current->counter = %d\n",current->pid,current->counter);
+  current->counter--;
+  if (current->counter <= 0)
+  {
     schedule();
-  }else if(current->counter == 0){
-    schedule();
-  }else{ //counter >= 2
-    current->counter--;
   }
+  // if(current->counter == 1){
+  //   current->counter--;// 0
+  //   schedule();
+  // }else if(current->counter == 0){
+  //   schedule();
+  // }else{ //counter >= 2
+  //   current->counter--;
+  // }
 }
 
 
 // Select the next task to run. If all tasks are done(counter=0), reinitialize all tasks.
 void schedule(void) {
-  unsigned char next;
+  unsigned char next = 0;
   // TODO
-  unsigned long min_counter = 0x7FFFFFF;
+  long min_counter = -2; // 0x7FFF
   char all_task_counter_is_zero = 1;
   // 遍历进程指针数组 `task`，
   // 从 `LAST_TASK` 至 `FIRST_TASK`，
@@ -106,7 +115,7 @@ void schedule(void) {
       if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
         all_task_counter_is_zero = 0;
         // find min counter
-        if (task[i]->counter < min_counter) {
+        if (task[i]->counter < min_counter || min_counter == -2) {
           min_counter = task[i]->counter;
           next = i;
         }
@@ -116,10 +125,23 @@ void schedule(void) {
 
   if(all_task_counter_is_zero == 1){
     init_test_case();
-    schedule();
+    //schedule();
+    for(int i = NR_TASKS - 1; i >= 0 ; i--){ // 从 LAST_TASK 至 FIRST_TASK
+      if(task[i] != 0){ //NULL 
+        if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
+          all_task_counter_is_zero = 0;
+          // find min counter
+          if (task[i]->counter < min_counter || min_counter == -2) {
+            min_counter = task[i]->counter;
+            next = i;
+          }
+        }
+      }
+    }
   }else{
     // do nothing
   }
+  printf("------------------schedule : next = %d ---------------------\n",next);
   show_schedule(next);
   
   switch_to(task[next]);
@@ -139,16 +161,21 @@ void do_timer(void) {
   
   // current process's counter -1, judge whether to schedule or go on.
   // TODO
-
-  //current->counter--;
-  if(current->counter == 1){
-    current->counter--;// 0
+  if (current == 0) // NULL
+    return;
+  printf("do timer pri: current->pid = %d current->priority = %d\n",current->pid,current->priority);
+  current->counter--;
+  printf("do timer pri: current->pid = %d current->counter = %d\n",current->pid,current->counter);
     schedule();
-  }else if(current->counter == 0){
-    schedule();
-  }else{ //counter >= 2
-    current->counter--;
-  }
+  // current->counter--;
+  // if(current->counter == 1){
+  //   current->counter--;// 0
+  //   schedule();
+  // }else if(current->counter == 0){
+  //   schedule();
+  // }else{ //counter >= 2
+  //   current->counter--;
+  // }
   // TODO
   // 每次 do_timer() 都进行一次抢占式优先级调度。
 }
@@ -157,8 +184,8 @@ void do_timer(void) {
 void schedule(void) {
   unsigned char next;
   // TODO
-  unsigned long long min_counter = 0x7FFFFFF;
-  unsigned long long high_priority = 5;
+  unsigned long long min_counter = 0x7FFF;
+  unsigned long long high_priority = 0xFF;
   char all_task_counter_is_zero = 1;
   // 遍历进程指针数组 task，从 LAST_TASK 至 FIRST_TASK，调度规则如下：
   // • 高优先级的进程，优先被运行（值越小越优先）。
@@ -170,29 +197,54 @@ void schedule(void) {
       if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
         all_task_counter_is_zero = 0;
         // find high priority
-        if (task[i]->priority > high_priority) {
+        if (task[i]->priority < high_priority || high_priority==0xFF) { // 优先被运行（值越小越优先）
           high_priority = task[i]->priority;
+          min_counter = task[i]->counter;
           next = i;
-          break;
+          // printf("high_priority = %d  next = %d\n",high_priority,next);
+          continue;//break;//goto next_step;
         }
         // find min counter
         else if((task[i]->priority == high_priority) && (task[i]->counter < min_counter)){
           min_counter = task[i]->counter;
           next = i;
-          break;
-        } // else if((task[i]->priority == high_priority) && (task[i]->counter == min_counter)){
-          // next = i;
-          // break;
-        // }        
+          printf("min_counter = %d  next = %d\n",min_counter,next);
+          continue;//break;//goto next_step;
+        }       
       }
     }
+    // next_step:
   }  
   if(all_task_counter_is_zero == 1){
     init_test_case();
-    schedule();
+    // schedule();
+    min_counter = 0x7FFF;
+    high_priority = 0xFF;
+    for(int i = NR_TASKS - 1; i >= 0 ;i--){ // 从 LAST_TASK 至 FIRST_TASK
+      if(task[i] != 0){ // not NULL
+        if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
+          all_task_counter_is_zero = 0;
+          // find high priority
+          if (task[i]->priority < high_priority) { // // 优先被运行（值越小越优先）
+            high_priority = task[i]->priority;
+            min_counter = task[i]->counter;
+            next = i;
+            continue;//break;//goto next_step_1;
+          }
+          // find min counter
+          else if((task[i]->priority == high_priority) && (task[i]->counter < min_counter)){
+            min_counter = task[i]->counter;
+            next = i;
+            continue;//break;//goto next_step_1;
+          }       
+        }
+      }
+      // next_step_1:
+    }
   }else{
     // do nothing
   }
+  printf("------------------schedule : next = %d ---------------------\n ",next);
   show_schedule(next);
 
   switch_to(task[next]);

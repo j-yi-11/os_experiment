@@ -18,6 +18,7 @@ int counter_priority[3][5][2] = {
 };
 
 void init_test_case() {
+  printf("init_test_case called\n");
   static int c_p_i = 0;
   for (int i = 0; i <= 4; i++) {
     task[i]->counter = counter_priority[c_p_i][i][0];
