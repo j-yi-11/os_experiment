@@ -29,7 +29,11 @@ void task_init(void) {
     // TODO
     // initialize task[i]
     // get the task_struct based on Kernel_Page and i
-    task[i] = (struct task_struct*)(Kernel_Page + i * PAGE_SIZE); // kalloc()
+    if(i==0){
+      task[i] = (struct task_struct*)Kernel_Page;
+    }else{
+      task[i] = (struct task_struct*)(LOW_MEMORY + (i-1) * PAGE_SIZE); 
+    }
     // set state = TASK_RUNNING, counter = 0, priority = 5, 
     task[i]->state = TASK_RUNNING;
     task[i]->counter = 0;
