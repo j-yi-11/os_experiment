@@ -34,11 +34,10 @@ void task_init(void) {
     }else{
       task[i] = (struct task_struct*)(LOW_MEMORY + (i-1) * PAGE_SIZE); 
     }
-    // set state = TASK_RUNNING, counter = 0, priority = 5, 
     task[i]->state = TASK_RUNNING;
     task[i]->counter = 0;
     task[i]->priority = 5;
-    // blocked = 0, pid = i, thread.sp, thread.ra
+    //thread.sp, thread.ra
     task[i]->blocked = 0;
     task[i]->pid = i;
     task[i]->thread.ra = (unsigned long long)__init_sepc;
@@ -108,7 +107,7 @@ void do_timer(void) {
 void schedule(void) {
   unsigned char next = 0;
   // TODO
-  long min_counter = -2; // 0x7FFF
+  unsigned long min_counter = 0x7FFF; // 0x7FFF
   char all_task_counter_is_zero = 1;
   // 遍历进程指针数组 `task`，
   // 从 `LAST_TASK` 至 `FIRST_TASK`，
@@ -119,7 +118,7 @@ void schedule(void) {
       if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
         all_task_counter_is_zero = 0;
         // find min counter
-        if (task[i]->counter < min_counter || min_counter == -2) {
+        if (task[i]->counter < min_counter) {
           min_counter = task[i]->counter;
           next = i;
         }
@@ -135,7 +134,7 @@ void schedule(void) {
         if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
           all_task_counter_is_zero = 0;
           // find min counter
-          if (task[i]->counter < min_counter || min_counter == -2) {
+          if (task[i]->counter < min_counter) {
             min_counter = task[i]->counter;
             next = i;
           }
@@ -152,7 +151,7 @@ void schedule(void) {
 }
 
 #endif
-
+/*jy PRI ok*/
 #ifdef PRIORITY
 
 // simulate the cpu timeslice, which measn a short time frame that gets assigned
@@ -180,8 +179,6 @@ void do_timer(void) {
   // }else{ //counter >= 2
   //   current->counter--;
   // }
-  // TODO
-  // 每次 do_timer() 都进行一次抢占式优先级调度。
 }
 
 // Select the task with highest priority and lowest counter to run. If all tasks are done(counter=0), reinitialize all tasks.
@@ -189,7 +186,7 @@ void schedule(void) {
   unsigned char next;
   // TODO
   unsigned long long min_counter = 0x7FFF;
-  unsigned long long high_priority = 0xFF;
+  unsigned long long high_priority = 0x7FFF;
   char all_task_counter_is_zero = 1;
   // 遍历进程指针数组 task，从 LAST_TASK 至 FIRST_TASK，调度规则如下：
   // • 高优先级的进程，优先被运行（值越小越优先）。
@@ -201,19 +198,19 @@ void schedule(void) {
       if (task[i]->state == TASK_RUNNING && task[i]->counter > 0){
         all_task_counter_is_zero = 0;
         // find high priority
-        if (task[i]->priority < high_priority || high_priority==0xFF) { // 优先被运行（值越小越优先）
+        if (task[i]->priority < high_priority) { // 优先被运行（值越小越优先）
           high_priority = task[i]->priority;
           min_counter = task[i]->counter;
           next = i;
           // printf("high_priority = %d  next = %d\n",high_priority,next);
-          continue;//break;//goto next_step;
+          continue;
         }
         // find min counter
         else if((task[i]->priority == high_priority) && (task[i]->counter < min_counter)){
           min_counter = task[i]->counter;
           next = i;
           printf("min_counter = %d  next = %d\n",min_counter,next);
-          continue;//break;//goto next_step;
+          continue;
         }       
       }
     }
@@ -233,17 +230,16 @@ void schedule(void) {
             high_priority = task[i]->priority;
             min_counter = task[i]->counter;
             next = i;
-            continue;//break;//goto next_step_1;
+            continue;
           }
           // find min counter
           else if((task[i]->priority == high_priority) && (task[i]->counter < min_counter)){
             min_counter = task[i]->counter;
             next = i;
-            continue;//break;//goto next_step_1;
+            continue;
           }       
         }
       }
-      // next_step_1:
     }
   }else{
     // do nothing
