@@ -1,6 +1,5 @@
 #include "stdio.h"
-// #include "syscall.h"
-#include "/home/oslab/os_experiment/lab4/arch/riscv/user/lib/include/syscall.h"
+#include "syscall.h"
 
 int tail = 0;
 char buffer[1000] = {[0 ... 999] = 0};
@@ -8,18 +7,6 @@ char buffer[1000] = {[0 ... 999] = 0};
 static inline int putchar(int c) {
   buffer[tail++] = (char)c;
   return 0;
-}
-
-
-long test(int t) {
-  long syscall_ret;
-  asm volatile("mv a7, %1\n"
-               "ecall\n"
-               "mv %0, a0\n"
-               : "=r"(syscall_ret)
-               : "r"(t)
-               : "a7");
-  return syscall_ret;
 }
 
 static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
@@ -129,9 +116,9 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
 
   long syscall_ret, fd = 1;
   buffer[tail++] = '\0';
-  // TODO: 完成系统调用，将 buffer 中的内容写入文件描述符 fd 中，返回输出字符串的大小
-  // struct ret_info ret_temp = syscall(SYS_WRITE, fd, (uint64_t)buffer, tail, 0, 0, 0);
-  syscall_ret = (u_syscall(SYS_WRITE, fd, (uint64_t)buffer, tail, 0, 0, 0)).a0;
+  // 完成系统调用，将 buffer 中的内容写入文件描述符 fd 中，返回输出字符串的大小
+
+  syscall_ret = u_syscall(SYS_WRITE, fd, (uint64_t)buffer, tail, 0, 0, 0).a0;
 
   return syscall_ret;
 }

@@ -1,31 +1,27 @@
+#include "defs.h"
 #include "stdio.h"
-// #include "syscall.h"
-#include "/home/oslab/os_experiment/lab4/arch/riscv/user/lib/include/syscall.h"
 
-int tail = 0;
-char buffer[1000] = {[0 ... 999] = 0};
-
-static inline int putchar(int c) {
-  buffer[tail++] = (char)c;
-  return 0;
+int putchar(const char c) {
+  *UART16550A_DR = (unsigned char)(c);
+  return (unsigned char)c;
 }
 
-
-long test(int t) {
-  long syscall_ret;
-  asm volatile("mv a7, %1\n"
-               "ecall\n"
-               "mv %0, a0\n"
-               : "=r"(syscall_ret)
-               : "r"(t)
-               : "a7");
-  return syscall_ret;
+int getchar() {
+  if(ReadReg(LSR) & 0x01){
+    return ReadReg(RHR);
+  } else {
+    return -1;
+  }
 }
 
-static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
+int puts(const char *s) {
+  while (*s)
+    putchar(*s++);
+}
+
+static int vprintfmt(int (*putch)(const char), const char *fmt, va_list vl) {
   int in_format = 0, longarg = 0;
   size_t pos = 0;
-
   for (; *fmt; fmt++) {
     if (in_format) {
       switch (*fmt) {
@@ -63,10 +59,7 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
           tmp /= 10;
         }
 
-        if (bits == 0)
-          bits++;
-
-        for (int i = bits - 1; i >= 0; i--) {
+        for (int i = bits; i >= 0; i--) {
           putch(decchar[i]);
         }
         pos += bits + 1;
@@ -84,13 +77,10 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
           tmp /= 10;
         }
 
-        if (bits == 0)
-          bits++;
-
-        for (int i = bits - 1; i >= 0; i--) {
+        for (int i = bits; i >= 0; i--) {
           putch(decchar[i]);
         }
-        pos += bits - 1;
+        pos += bits + 1;
         longarg = 0;
         in_format = 0;
         break;
@@ -126,21 +116,13 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
       pos++;
     }
   }
-
-  long syscall_ret, fd = 1;
-  buffer[tail++] = '\0';
-  // TODO: 完成系统调用，将 buffer 中的内容写入文件描述符 fd 中，返回输出字符串的大小
-  // struct ret_info ret_temp = syscall(SYS_WRITE, fd, (uint64_t)buffer, tail, 0, 0, 0);
-  syscall_ret = (u_syscall(SYS_WRITE, fd, (uint64_t)buffer, tail, 0, 0, 0)).a0;
-
-  return syscall_ret;
+  return pos;
 }
 
 int printf(const char *s, ...) {
   int res = 0;
   va_list vl;
   va_start(vl, s);
-  tail = 0;
   res = vprintfmt(putchar, s, vl);
   va_end(vl);
   return res;

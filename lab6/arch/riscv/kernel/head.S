@@ -44,9 +44,10 @@ _start:
 	li t1, 0xB000
 	csrs medeleg, t1
 
-	# TODO: 把用户系统调用（syscall_from_U_mode）委托给 S 模式处理
+	# DONE: 把用户系统调用（syscall_from_U_mode）委托给 S 模式处理
 	li t1, 0x100
 	csrs medeleg, t1
+
 
 	# .bss 段全部置 0
 	la t1, bss_start
@@ -86,7 +87,7 @@ _supervisor:
 	# 7. 记录 start_kernel 在虚拟地址空间下的地址，加载到 s0 寄存器中
 	# 8. 设置 sp 的值为虚拟地址空间下的 init_stack_top
 	# 9. 设置sstatus.spp = 0
-	# 10. TODO: 设置sstatus.sum = 1，使得S态可以访问U态的地址空间，便于后续的字符串输出
+	# 10. 设置sstatus.sum = 1，使得S态可以访问U态的地址空间，便于后续的字符串输出
 	# 11. 使用 jr 指令跳转到 start_kernel（读取之前记录在寄存器中的值）
 
 	# 关闭 MMU
@@ -131,7 +132,7 @@ _supervisor:
 	li t1, 0x100
 	csrc sstatus, t1
 
-	# TODO: 设置sstatus.sum = 1，使得S态可以访问U态的地址空间，便于后续的字符串输出
+	# 设置sstatus.sum = 1，使得S态可以访问U态的地址空间，便于后续的字符串输出
 	li t1, 0x40000
 	csrs sstatus, t1
 
@@ -215,8 +216,8 @@ time_interupt:
 	# 恢复寄存器 mepc 和 mstatus
 	ld t0, 248(sp)
 	ld t1, 256(sp)
-  csrw mstatus, t0
-  csrw mepc, t1
+  	csrw mstatus, t0
+  	csrw mepc, t1
 	j exit
 
 encall_from_s:
@@ -249,8 +250,8 @@ other_trap:
 	# 恢复寄存器 mepc 和 mstatus
 	ld t0, 248(sp)
 	ld t1, 256(sp)
-  csrw mstatus, t0
-  csrw mepc, t1
+  	csrw mstatus, t0
+  	csrw mepc, t1
 
 exit:
 	#恢复寄存器
