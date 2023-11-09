@@ -78,13 +78,56 @@ _supervisor:
 	# 提示：从 _end 开始为页表分配物理空间，即根页表的地址为 _end
 	# 5. 执行 sfence.vma 指令同步虚拟内存相关映射
 	# 6. 设置 stvec 为异常处理函数 trap_s 在虚拟地址空间下的地址
-	# 提示：vmlinux.lds 中规定将内核放在物理内存 0x80000000、虚拟内存 0xffffffc000000000 的位置，因此物理地址空间下的地址 x 在虚拟地址空间下的地址为 x - 0x80000000 + 0xffffffe00000000。
+	# 提示：vmlinux.lds 中规定将内核放在物理内存 0x80000000、虚拟内存 0xffffffc000000000 的位置，因此物理地址空间下的地址 x 在虚拟地址空间下的地址为 x - 0x80000000 + 0xffffffc00000000。
 	# 7. 记录 start_kernel 在虚拟地址空间下的地址，加载到 s0 寄存器中
 	# 8. 设置 sp 的值为虚拟地址空间下的 init_stack_top
 	# 9. 设置sstatus.spp = 0
 	# 9. 使用 jr 指令跳转到 start_kernel（读取之前记录在寄存器中的值）
 
-	
+	# 关闭MMU
+	li t1, 0
+	csrw satp, t1
+
+	# 设置sp的值为init_stack_top的物理地址
+	la sp, init_stack_top
+
+	# 调用 paging_init 函数建立页表
+	call paging_init
+
+	# 设置satp的值，打开MMU
+	la t1, _end
+	srli t1, t1, 12
+	csrw satp, t1
+	li t1, 0x8000000000000000
+	csrs satp, t1
+
+	# 同步虚拟内存相关映射
+	sfence.vma
+
+	# 设置stvec为异常处理函数trap_s在虚拟地址空间下的地址
+	li t1, 0xffffffc000000000
+	li t2, 0x80000000
+	la t3, trap_s
+	add t3, t3, t1
+	sub t3, t3, t2
+	csrw stvec, t3
+
+	# 记录start_kernel在虚拟地址空间下的地址，加载到s0寄存器中
+	la s0, start_kernel
+	add s0, s0, t1
+	sub s0, s0, t2
+
+	# 设置 sp 的值为虚拟地址空间下的 init_stack_top
+	la sp, init_stack_top
+	add sp, sp, t1
+	sub sp, sp, t2
+
+	# 设置sstatus.spp = 0
+	li t1, 0x100
+	csrc sstatus, t1
+
+	# 跳转到 start_kernel
+	jr s0
 
 
 
@@ -197,8 +240,8 @@ other_trap:
 	# 恢复寄存器 mepc 和 mstatus
 	ld t0, 248(sp)
 	ld t1, 256(sp)
-    csrw mstatus, t0
-    csrw mepc, t1
+  csrw mstatus, t0
+  csrw mepc, t1
 
 exit:
 	#恢复寄存器

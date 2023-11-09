@@ -65,6 +65,7 @@ struct task_struct {
 
   uint64_t sscratch; // 保存 sscratch
   uint64_t satp;     // 保存 satp
+
 };
 
 /* 进程初始化 创建四个dead_loop进程 */

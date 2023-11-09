@@ -8,7 +8,7 @@
 
 trap_s:
 	# TODO: swap sp and sscratch, now sp point to kernel stack, sscratch point to user stack
-	
+	csrrw sp, sscratch, sp
 
 	# save the caller saved registers and sepc
 	addi sp, sp, -reg_size*17
@@ -60,7 +60,7 @@ trap_s:
 	addi sp, sp, reg_size*17
 
 	# TODO: swap sp and sscratch, now sp point to user stack, sscratch point to kernel stack
-	
+	csrrw sp, sscratch, sp
 
 	sret
 
@@ -88,9 +88,11 @@ __switch_to:
 	sd s11, 13*reg_size(a3)
 	
 	# TODO: save sscratch into prev->sscratch
-	
+	csrr s0, sscratch
+	sd s0, 14*reg_size(a3)
 	# TODO: save satp into prev->satp
-	
+	csrr s0, satp
+	sd s0, 15*reg_size(a3)	
   
 	# DONE: Restore context from next->thread
 	ld  ra, 0*reg_size(a4)
@@ -109,10 +111,12 @@ __switch_to:
 	ld s11, 13*reg_size(a4)
 
 	# TODO: load sscratch from next->sscratch
-	
+	ld s0, 14*reg_size(a4)
+	csrw sscratch, s0	
 
 	# TODO: load satp from next->satp
-	
+	ld s0, 15*reg_size(a4)
+	csrw satp, s0	
   
 	# return to ra
 	ret
@@ -124,5 +128,5 @@ __init_sepc:
 	li t0, 0x1000000
 	csrw sepc, t0
 	# TODO: swap sp and sscratch, now sp point to user stack, sscratch point to kernel stack
-	
+	csrrw sp, sscratch, sp
 	sret

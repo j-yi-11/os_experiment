@@ -1,6 +1,5 @@
 #include "defs.h"
 #include "sched.h"
-#include "stdio.h"
 #include "test.h"
 
 void handler_s(uint64_t cause, uint64_t epc) {

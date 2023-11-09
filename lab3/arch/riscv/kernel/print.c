@@ -9,7 +9,6 @@ int putchar(const char c) {
 int puts(const char *s) {
   while (*s)
     putchar(*s++);
-  return 0;
 }
 
 static int vprintfmt(int (*putch)(const char), const char *fmt, va_list vl) {

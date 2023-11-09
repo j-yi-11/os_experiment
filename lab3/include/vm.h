@@ -12,8 +12,8 @@
 
 #define PAGE_SIZE 4096UL
 
-#define PHYSICAL_ADDR(x) x & 0xffffffff | 0x80000000
-#define VIRTUAL_ADDR(x) x & 0xfffffff | 0xffffffc000000000
+#define PHYSICAL_ADDR(x) (((uint64_t)(x)) & 0xffffffff | 0x80000000)
+#define VIRTUAL_ADDR(x) (((uint64_t)(x)) & 0xfffffff | 0xffffffc000000000)
 
 static uint64_t alloc_page_num = 0;
 
