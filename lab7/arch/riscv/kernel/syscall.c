@@ -1,4 +1,5 @@
 #include "syscall.h"
+#include "fs.h"
 #include "list.h"
 #include "riscv.h"
 #include "sched.h"
@@ -33,10 +34,10 @@ int strcmp(const char *a, const char *b) {
 
 uint64_t get_program_address(const char * name) {
     uint64_t offset = 0;
-    if (strcmp(name, "hello") == 0) offset = PAGE_SIZE;
-    else if (strcmp(name, "malloc") == 0) offset = PAGE_SIZE * 2;
-    else if (strcmp(name, "print") == 0) offset = PAGE_SIZE * 3;
-    else if (strcmp(name, "guess") == 0) offset = PAGE_SIZE * 4;
+    if (strcmp(name, "hello") == 0) offset = PAGE_SIZE * 2;
+    else if (strcmp(name, "read") == 0) offset = PAGE_SIZE * 4;
+    else if (strcmp(name, "test") == 0) offset = PAGE_SIZE * 6;
+    else if (strcmp(name, "fssh") == 0) offset = PAGE_SIZE * 7;
     else {
         printf("Unknown user program %s\n", name);
         while (1);
@@ -73,6 +74,7 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         // 5. set current process a0 = new task pid, sepc += 4
         // 6. copy kernel stack (only need trap_s' stack)
         // 7. set new process a0 = 0, and ra = trap_s_bottom, sp = register number * 8
+
         int i = 0;
         for (i = 0; i < NR_TASKS; i++) {
             if (!task[i] || task[i]->counter == 0)
@@ -135,6 +137,7 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         *(uint64_t *)((uint64_t)(sp_ptr + 4) - (uint64_t)current + (uint64_t)task[i]) = 0;
         task[i]->thread.sp = (uint64_t)task[i] + PAGE_SIZE - 31 * 8;
         task[i]->thread.ra = (uint64_t)&trap_s_bottom;
+
         break;
     }
     case SYS_EXEC: {
@@ -143,6 +146,7 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         // 2. reset user stack
         // 3. create mapping for new user program address
         // 4. set sepc = 0x1000000
+
         uint64_t root_page_table = (current->satp & ((1ULL << 44) - 1)) << 12;
         struct vm_area_struct* vma;
         list_for_each_entry(vma, &current->mm.vm->vm_list, vm_list) {
@@ -162,6 +166,7 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
 
         asm volatile ("sfence.vma");
         sp_ptr[16] = 0x1000000;
+
         break;
     }
     case SYS_EXIT: {
@@ -171,6 +176,7 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         // 3. free page table
         // 4. clear current task, set current task->counter = 0
         // 5. call schedule
+
         uint64_t root_page_table = (current->satp & ((1ULL << 44) - 1)) << 12;
         struct vm_area_struct* vma;
         list_for_each_entry(vma, &current->mm.vm->vm_list, vm_list) {
@@ -197,9 +203,8 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
     case SYS_WAIT: {
         // TODO:
         // 1. find the process which pid == arg0
-        // 2. if not find or counter = 0
+        // 2. if not find
         //   2.1. sepc += 4, return
-        //   2.2. counter = 0, free it's kernel stack
         // 3. if find
         //   3.1. change current process's priority
         //   3.2. call schedule to run other process
@@ -217,7 +222,7 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
                 }
             }
         }
-        sp_ptr[16] += 4;        
+        sp_ptr[16] += 4;
         break;
     }
     case SYS_WRITE: {
@@ -269,6 +274,42 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         }
         // flash the TLB
         asm volatile ("sfence.vma");
+        sp_ptr[16] += 4;
+        break;
+    }
+    case SFS_OPEN: {
+        ret.a0 = sfs_open((const char *)arg0, arg1);
+        sp_ptr[4] = ret.a0;
+        sp_ptr[16] += 4;
+        break;
+    }
+    case SFS_READ: {
+        ret.a0 = sfs_read(arg0, (const char *)arg1, arg2);
+        sp_ptr[4] = ret.a0;
+        sp_ptr[16] += 4;
+        break;
+    }
+    case SFS_WRITE: {
+        ret.a0 = sfs_write(arg0, (const char *)arg1, arg2);
+        sp_ptr[4] = ret.a0;
+        sp_ptr[16] += 4;
+        break;
+    }
+    case SFS_SEEK: {
+        ret.a0 = sfs_seek(arg0, arg1, arg2);
+        sp_ptr[4] = ret.a0;
+        sp_ptr[16] += 4;
+        break;
+    }
+    case SFS_GET_FILES: {
+        ret.a0 = sfs_get_files((const char *)arg0, (char **)arg1);
+        sp_ptr[4] = ret.a0;
+        sp_ptr[16] += 4;
+        break;
+    }
+    case SFS_CLOSE: {
+        ret.a0 = sfs_close(arg0);
+        sp_ptr[4] = ret.a0;
         sp_ptr[16] += 4;
         break;
     }
