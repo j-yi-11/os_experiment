@@ -63,16 +63,13 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
     }
     case SYS_FORK: {
         // TODO:
-        // 1. create new task and set counter, priority and pid (use our task array)
-        // 2. create root page table, set current process's satp
-        //   2.1 copy current process's user program address, create mapping for user program
-        //   2.2 create mapping for kernel address
-        //   2.3 create mapping for UART address
+        
         // 3. create user stack, copy current process's user stack and save user stack sp to new_task->sscratch
         // 4. copy mm struct and create mapping
         // 5. set current process a0 = new task pid, sepc += 4
         // 6. copy kernel stack (only need trap_s' stack)
         // 7. set new process a0 = 0, and ra = trap_s_bottom, sp = register number * 8
+        // 1. create new task and set counter, priority and pid (use our task array)
         int i = 0;
         for (i = 0; i < NR_TASKS; i++) {
             if (!task[i] || task[i]->counter == 0)
@@ -85,8 +82,11 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         task[i]->priority = 999;
         task[i]->blocked = 0;
         task[i]->pid = i;
-
+        // 2. create root page table, set current process's satp
+        //   2.2 create mapping for kernel address
+        //   2.3 create mapping for UART address
         uint64_t root_page_table = alloc_page();
+        //   2.1 copy current process's user program address, create mapping for user program
         task[i]->mm.user_program_start = current->mm.user_program_start;
         task[i]->satp = root_page_table >> 12 | 0x8000000000000000 | (((uint64_t) (task[i]->pid))  << 44);
         create_mapping((uint64_t*)root_page_table, 0x1000000, task[i]->mm.user_program_start, PAGE_SIZE * 2, PTE_V | PTE_R | PTE_X | PTE_U | PTE_W);
@@ -191,7 +191,7 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         free_pages(root_page_table);
 
         current->counter = 0;
-        schedule(0);
+        schedule();//schedule(0);
         break;
     }
     case SYS_WAIT: {
@@ -212,7 +212,7 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
                     if (task[i]->pid == arg0 && task[i]->counter > 0) {
                         current->priority = task[i]->priority + 1;
                         exec_finish = 0;
-                        schedule(0);
+                        schedule();//schedule(0);
                     }
                 }
             }
