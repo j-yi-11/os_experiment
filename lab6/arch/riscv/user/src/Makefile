@@ -13,8 +13,8 @@ all: $(USERS_BIN)
 head.o: head.s
 	${CC}  ${CFLAG}  -c $<
 
-%.bin: %.c head.o
-	${CC}  ${CFLAG} -c $< -o $*.o
+%.bin: %.c head.o $(LIB)
+	${CC}  ${CFLAG} -O0 -c $< -o $*.o
 	${LD} -T user.lds $*.o head.o $(LIB) -o $*
 	${OBJCOPY} -O binary $* $@
 	rm $*

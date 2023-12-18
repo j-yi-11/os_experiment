@@ -1,12 +1,20 @@
 #pragma once
 
 #include "defs.h"
-
+#include "list.h"
 #define SFS_MAX_INFO_LEN     32
 #define SFS_MAGIC            0x1f2f3f4f
 #define SFS_NDIRECT          11
 #define SFS_DIRECTORY        1
 #define SFS_MAX_FILENAME_LEN 27
+
+//jy added
+#define SFS_MAX_BLOCK_NUM 400
+#define MAX_OPEN_FILES 16
+#define SFS_BLOCK_SIZE 4096ULL
+#define MIN(a,b) (((a)<(b))?(a):(b))
+//
+
 
 #define SEEK_CUR 0
 #define SEEK_SET 1
@@ -114,23 +122,38 @@ int sfs_get_files(const char* path, char* files[]);
 // -------------------------------------------------------
 // ------------ 以下数据结构和缓存设计可自行修改---------------
 
-struct sfs_fs {
-    // sfs_super super;           // SFS 的超级块
-    // bitmap *freemap;           // freemap 区域管理，可自行设计
-    // bool super_dirty;          // 超级块或 freemap 区域是否有修改
-    // list_entry_t inode_list;   // 加载进来的 block 组织起来的链表 （数据结构可自行设计）
-    // list_entry_t *hash_list;   // Hash 表 （数据结构可自行设计）
-};
-
 // 内存中的 block 缓存结构
 struct sfs_memory_block {
-    // union {
-    //     sfs_inode* din;   // 可能是 inode 块
-    //     char *block;      // 可能是数据块
-    // } block;
-    // bool is_inode;        // 是否是 inode
-    // uint32_t blockno;     // block 编号
-    // bool dirty;           // 脏位，保证写回数据
-    // int reclaim_count;    // 指向次数，因为硬链接有可能会打开同一个 inode，所以需要记录次数
-    // list_entry_t inode_link; // 在 sfs_fs 内 inode_list 链表中的位置 （可根据自己的数据结构设计自行修改）
+    union {
+        struct sfs_inode* din;   // 可能是 inode 块
+        char *block;      // 可能是数据块
+    } block;
+    bool is_inode;        // 是否是 inode
+    uint32_t blockno;     // block 编号
+    bool dirty;           // 脏位，保证写回数据
+    int reclaim_count;    // 指向次数，因为硬链接有可能会打开同一个 inode，所以需要记录次数
+    struct list_head inode_link; // 在 sfs_fs 内 inode_list 链表中的位置 （可根据自己的数据结构设计自行修改）
+};
+
+typedef struct block{
+    //data
+    struct sfs_memory_block bufferBlock;
+    // link
+    struct list_head next_block_address;
+}sfs_block;
+
+typedef struct hash_node{
+    // data
+    int32_t inode_number;
+    sfs_block *inode_block_address;
+    // link
+    struct hash_node *next;
+}sfs_hash_node;
+
+struct sfs_fs {
+    struct sfs_super super;           // SFS 的超级块
+    char *freemap;           // freemap 区域管理，可自行设计
+    bool super_dirty;          // 超级块或 freemap 区域是否有修改
+    sfs_block* block_list;   // 加载进来的 block 组织起来的链表 （数据结构可自行设计）
+    sfs_hash_node *hash_list;   // Hash 表 （数据结构可自行设计）: inode number-->block address that contains inode
 };

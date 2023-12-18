@@ -17,7 +17,7 @@ struct ret_info u_syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, ui
                     "mv %1, a1;"
                     : "=r"(ret.a0), "=r"(ret.a1)
                     : "r"(syscall_num), "r"(arg0), "r"(arg1), "r"(arg2), "r"(arg3), "r"(arg4), "r"(arg5)
-                    : "a0", "a1", "a2", "a3", "a4", "a5", "a7");
+                    : "memory", "a0", "a1", "a2", "a3", "a4", "a5", "a7");
                   
     return ret;
 }

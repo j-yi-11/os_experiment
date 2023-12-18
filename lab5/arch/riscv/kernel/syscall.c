@@ -35,7 +35,18 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         // 2.3 set the mapped flag to 0
         // 3. add the vma struct to the mm_struct's vma list
         // return the vm_start
-        
+        struct vm_area_struct* vma = (struct vm_area_struct*)kmalloc(sizeof(struct vm_area_struct));
+        if (vma == NULL) {
+            ret.a0 = -1;
+            break;
+        }
+        vma->vm_start = arg0;
+        vma->vm_end = arg0 + arg1;
+        vma->vm_flags = arg2;
+        vma->mapped = 0;
+        list_add(&(vma->vm_list), &(current->mm.vm->vm_list));
+
+        ret.a0 = vma->vm_start;
         break;
 
     }
@@ -48,7 +59,22 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         // 4. delete the vma from the mm_struct's vma list (list_del).
         // 5. free the vma struct (kfree).
         // return 0 if success, otherwise return -1
+        ret.a0 = -1;
+        struct vm_area_struct* vma;
+        list_for_each_entry(vma, &current->mm.vm->vm_list, vm_list) {
+            if (vma->vm_start == arg0 && vma->vm_end == arg0 + arg1) {
+                if (vma->mapped == 1) {
+                    uint64_t pte = get_pte((current->satp & ((1ULL << 44) - 1)) << 12, vma->vm_start);
+                    free_pages((pte >> 10) << 12);
+                }
+                create_mapping((current->satp & ((1ULL << 44) - 1)) << 12, vma->vm_start, 0, (vma->vm_end - vma->vm_start), 0);
+                list_del(&(vma->vm_list));
+                kfree(vma);
 
+                ret.a0 = 0;
+                break;
+            }
+        }
 
         // flash the TLB
         asm volatile ("sfence.vma");

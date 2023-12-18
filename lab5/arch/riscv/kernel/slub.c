@@ -314,7 +314,7 @@ void *kmalloc(size_t size) {
   for (objindex = 0; objindex < NR_PARTIAL; objindex++) {
     if(size <= kmem_cache_objsize[objindex]) {
       // TODO:
-      
+      p = kmem_cache_alloc(slub_allocator[objindex]);
       return p;
     }
   }
@@ -322,9 +322,9 @@ void *kmalloc(size_t size) {
   // size 若不在 kmem_cache_objsize 范围之内，则使用 buddy system 来分配内存
   if (objindex >= NR_PARTIAL) {
     // TODO:
-    
+    p = alloc_pages((size - 1) / PAGE_SIZE + 1);
 
-    set_page_attr(p, (size - 1) / PAGE_SIZE, PAGE_BUDDY);
+    set_page_attr(p, (size - 1) / PAGE_SIZE + 1, PAGE_BUDDY);
   }
 
   return p;
@@ -342,13 +342,13 @@ void kfree(const void *addr) {
   
   if (page->flags == PAGE_BUDDY) {
     // TODO:
-    
+    free_pages((uint64_t)addr);
 
     clear_page_attr(ADDR_TO_PAGE(addr)->header);
 
   } else if (page->flags == PAGE_SLUB) {
     // TODO:
-    
+    kmem_cache_free((void *)addr);
   }
 
   return;

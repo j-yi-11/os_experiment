@@ -305,7 +305,7 @@ void *kmalloc(size_t size) {
 
   if (size == 0) return NULL;
 
-  // TODO:
+  // DONE:
   // 1. 判断 size 是否处于 slub_allocator[objindex] 管理的范围内
   // 2. 如果是就使用 kmem_cache_alloc 接口分配，否则使用 alloc_pages 接口分配
   
@@ -313,7 +313,7 @@ void *kmalloc(size_t size) {
   // 来分配内存
   for (objindex = 0; objindex < NR_PARTIAL; objindex++) {
     if(size <= kmem_cache_objsize[objindex]) {
-      // TODO:
+      // DONE:
       p = kmem_cache_alloc(slub_allocator[objindex]);
       return p;
     }
@@ -321,10 +321,10 @@ void *kmalloc(size_t size) {
 
   // size 若不在 kmem_cache_objsize 范围之内，则使用 buddy system 来分配内存
   if (objindex >= NR_PARTIAL) {
-    // TODO:
+    // DONE:
     p = alloc_pages((size - 1) / PAGE_SIZE + 1);
 
-    set_page_attr(p, (size - 1) / PAGE_SIZE, PAGE_BUDDY);
+    set_page_attr(p, (size - 1) / PAGE_SIZE + 1, PAGE_BUDDY);
   }
 
   return p;
@@ -338,16 +338,16 @@ void kfree(const void *addr) {
   // 获得地址所在页的属性
   page = ADDR_TO_PAGE(addr);
 
-  // TODO: 判断当前页面属性，使用 free_pages 接口回收或使用 kmem_cache_free 接口回收
+  // DONE: 判断当前页面属性，使用 free_pages 接口回收或使用 kmem_cache_free 接口回收
   
   if (page->flags == PAGE_BUDDY) {
-    // TODO:
+    // DONE:
     free_pages((uint64_t)addr);
 
     clear_page_attr(ADDR_TO_PAGE(addr)->header);
 
   } else if (page->flags == PAGE_SLUB) {
-    // TODO:
+    // DONE:
     kmem_cache_free((void *)addr);
   }
 

@@ -1,6 +1,6 @@
 #include "getpid.h"
-// #include "syscall.h"
-#include "/home/oslab/os_experiment/lab4/arch/riscv/user/lib/include/syscall.h"
+#include "syscall.h"
+// #include "/home/oslab/os_experiment/lab4/arch/riscv/user/lib/include/syscall.h"
 #include "types.h"
 
 uint64_t current_sp() {

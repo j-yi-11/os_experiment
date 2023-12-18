@@ -13,7 +13,7 @@ all: $(USERS_BIN)
 buddy: CFLAG := ${CF} ${INCLUDE} -DBUDDY
 buddy: $(USERS_BIN)
 
-%.bin:%.c
+%.bin:%.c $(LIB)
 	${CC}  ${CFLAG}  -c $< -o $*.o
 	${LD} $*.o $(LIB) -o $*
 	${OBJCOPY} -O binary $* $@

@@ -61,7 +61,14 @@ void init_buddy_system() {
   // 那么，下标为 X 的节点可分配的内存为多少呢？
   // 2. 将buddy system的base_addr设置为&_end的物理地址
   // 3. 将buddy system的initialized设置为true
-
+  buddy_system.bitmap[1] = MEMORY_SIZE / PAGE_SIZE;
+  for(int i = 2; i < 8192; ++i) {
+    if(buddy_system.bitmap[i] == 0) {
+      buddy_system.bitmap[i] = buddy_system.bitmap[i/2] / 2;
+    }
+  }
+  buddy_system.base_addr = PHYSICAL_ADDR((uint64_t)&_end);
+  buddy_system.initialized = 1;
 
 };
 
@@ -75,7 +82,37 @@ uint64_t alloc_buddy(int index, unsigned int num) {
   // 4. 如果当前节点的可分配连续内存小于num，则分配失败返回上层节点
   // 如果完成分配，则要递归更新节点信息，将涉及到的节点的可分配连续内存更新，
   // 已拆分则是左右子节点的可分配的最大连续物理内存最大值，未拆分则是两者之和，并使用set_split更新节点的状态
-  
+    if (get_size(buddy_system.bitmap[index]) > num) {
+    uint64_t addr = alloc_buddy(index * 2, num);
+    if(addr == 0) {
+      addr = alloc_buddy(index * 2 + 1, num);
+    }
+    if (addr != 0) {
+      buddy_system.bitmap[index] = set_split(
+        get_size(buddy_system.bitmap[index*2]) > get_size(buddy_system.bitmap[index*2+1]) ? 
+        get_size(buddy_system.bitmap[index*2]) : get_size(buddy_system.bitmap[index*2+1]));
+    }
+    return addr;
+  }
+  else if (get_size(buddy_system.bitmap[index]) == num) {
+    if (!check_split(buddy_system.bitmap[index])) {
+      buddy_system.bitmap[index] = 0;
+      return get_addr(index);
+    }
+    else {
+      uint64_t addr = alloc_buddy(index * 2, num);
+      if(addr == 0) {
+        addr = alloc_buddy(index * 2 + 1, num);
+      }
+      if (addr != 0) {
+        buddy_system.bitmap[index] = buddy_system.bitmap[index]-num;
+      }
+      return addr;
+    }
+  }
+  else {
+    return 0;
+  }
 }
 
 uint64_t alloc_pages(unsigned int num) {
@@ -86,7 +123,13 @@ uint64_t alloc_pages(unsigned int num) {
   // TODO:
   // 1. 将num向上对齐到2的幂次
   // 2. 调用alloc_buddy函数完成分配
+  int i = 1;
+  while (i < num) {
+    i *= 2;
+  }
+  uint64_t addr = alloc_buddy(1, i);
 
+  return addr;
 
 
 }
@@ -100,14 +143,42 @@ void free_buddy(int index) {
   // 提示：使用check_split函数可以获取节点index的状态
   // 提示：使用set_unsplit函数可以将节点index的状态恢复为初始状态
   // 提示：使用get_block_size函数可以获取节点index的初始可分配内存大小
-
+  if (check_split(buddy_system.bitmap[index])) {
+    printf("error: free page failed\n");
+    while(1);
+    return;
+  }
+  else {
+    buddy_system.bitmap[index] = get_block_size(index);
+    while (index != 1) {
+      if (buddy_system.bitmap[index] == buddy_system.bitmap[index ^ 1]) {
+        buddy_system.bitmap[index / 2] = buddy_system.bitmap[index] + buddy_system.bitmap[index ^ 1];
+        index /= 2;
+      }
+      else {
+        break;
+      }
+    }
+  }
 
 }
 
 void free_pages(uint64_t pa) {
+  // check that the pa is in the buddy system
+  if (pa < buddy_system.base_addr || pa >= buddy_system.base_addr + MEMORY_SIZE) {
+    printf("error: pa out of range\n");
+    return;
+  }
   // TODO: find the buddy system node according to pa, and free it.
   // 注意，如果该节点的状态为已经被拆分，则应该释放其左子节点
   // 提示：使用get_index函数可以获取pa对应的最上层节点的下标
+  int index = get_index(pa);
+  while(check_split(buddy_system.bitmap[index])) {
+    index *= 2;
+  }
+  free_buddy(index);
 
+
+  return;
 
 }

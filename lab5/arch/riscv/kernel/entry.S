@@ -98,7 +98,6 @@ __switch_to:
 	# DONE: Restore context from next->thread
 	ld  ra, 0*reg_size(a4)
 	ld  sp, 1*reg_size(a4)
-	ld  s0, 2*reg_size(a4)
 	ld  s1, 3*reg_size(a4)
 	ld  s2, 4*reg_size(a4)
 	ld  s3, 5*reg_size(a4)
@@ -118,7 +117,9 @@ __switch_to:
 	# DONE: load satp from next->satp
 	ld s0, 15*reg_size(a4)
 	csrw satp, s0
-  
+
+  	ld  s0, 2*reg_size(a4)
+
 	# return to ra
 	ret
 

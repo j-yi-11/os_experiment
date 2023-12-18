@@ -28,7 +28,7 @@ void handler_s(uint64_t cause, uint64_t epc, uint64_t sp) {
 
       // TODO: 
       // 1. get the faulting address from stval register
-
+      asm volatile("csrr %0, stval" : "=r"(stval));
       
 
       printf("Page fault! epc = 0x%016lx, stval = 0x%016lx\n", epc, stval);
@@ -42,7 +42,29 @@ void handler_s(uint64_t cause, uint64_t epc, uint64_t sp) {
         // 4. if the faulting address is valid, allocate physical pages, map it to the vm area, mark the vma mapped(vma->mapped = 1), and return
         // 5. otherwise, print error message and add 4 to the sepc
         // 6. if the faulting address is not in the range of any vm area, add 4 to the sepc (DONE)
-
+        if (stval >= vma->vm_start && stval < vma->vm_end) {
+          if ( (vma->vm_flags & PTE_V) && (vma->vm_flags & PTE_U) && 
+             (((vma->vm_flags & PTE_X) && cause == 0xc) ||
+              ((vma->vm_flags & PTE_R) && cause == 0xd) ||
+              ((vma->vm_flags & PTE_R) && (vma->vm_flags & PTE_W) && cause == 0xf))
+              ) {
+              
+            uint64_t pa = alloc_pages((vma->vm_end - vma->vm_start) / PAGE_SIZE);
+            if (pa == 0) {
+              printf("alloc_pages failed!\n");
+              sp_ptr[16] += 4;
+              return;
+            }
+            create_mapping((current->satp & ((1ULL << 44) - 1)) << 12, vma->vm_start, pa, (vma->vm_end - vma->vm_start), vma->vm_flags);
+            vma->mapped = 1;
+            return;
+          }
+          else {
+            printf("Invalid permission! scause: %llx flags: %llx \n", cause, vma->vm_flags);
+            sp_ptr[16] += 4;
+            return;
+          }
+        }
         
         
       }

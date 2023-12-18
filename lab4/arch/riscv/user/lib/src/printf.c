@@ -1,6 +1,5 @@
 #include "stdio.h"
-// #include "syscall.h"
-#include "/home/oslab/os_experiment/lab4/arch/riscv/user/lib/include/syscall.h"
+#include "syscall.h"
 
 int tail = 0;
 char buffer[1000] = {[0 ... 999] = 0};

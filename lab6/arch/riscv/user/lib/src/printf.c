@@ -1,15 +1,17 @@
 #include "stdio.h"
 #include "syscall.h"
 
-int tail = 0;
-char buffer[1000] = {[0 ... 999] = 0};
 
-static inline int putchar(int c) {
-  buffer[tail++] = (char)c;
+static inline int putchar(char *buffer, int c) {
+  *buffer = (char)c;
   return 0;
 }
 
-static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
+static int vprintfmt(int (*putch)(char*, int), const char *fmt, va_list vl) {
+  int tail = 0;
+
+  char buffer[1000];
+
   int in_format = 0, longarg = 0;
   size_t pos = 0;
 
@@ -28,7 +30,7 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
         for (int halfbyte = hexdigits; halfbyte >= 0; halfbyte--) {
           int hex = (num >> (4 * halfbyte)) & 0xF;
           char hexchar = (hex < 10 ? '0' + hex : 'a' + hex - 10);
-          putch(hexchar);
+          putch(&buffer[tail++], hexchar);
           pos++;
         }
         longarg = 0;
@@ -40,7 +42,7 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
         long num = longarg ? va_arg(vl, long) : va_arg(vl, int);
         if (num < 0) {
           num = -num;
-          putch('-');
+          putch(&buffer[tail++], '-');
           pos++;
         }
         int bits = 0;
@@ -54,7 +56,7 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
           bits++;
 
         for (int i = bits - 1; i >= 0; i--) {
-          putch(decchar[i]);
+          putch(&buffer[tail++], decchar[i]);
         }
         pos += bits + 1;
         longarg = 0;
@@ -75,7 +77,7 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
           bits++;
 
         for (int i = bits - 1; i >= 0; i--) {
-          putch(decchar[i]);
+          putch(&buffer[tail++], decchar[i]);
         }
         pos += bits - 1;
         longarg = 0;
@@ -86,7 +88,7 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
       case 's': {
         const char *str = va_arg(vl, const char *);
         while (*str) {
-          putch(*str);
+          putch(&buffer[tail++], *str);
           pos++;
           str++;
         }
@@ -97,7 +99,7 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
 
       case 'c': {
         char ch = (char)va_arg(vl, int);
-        putch(ch);
+        putch(&buffer[tail++], ch);
         pos++;
         longarg = 0;
         in_format = 0;
@@ -109,7 +111,7 @@ static int vprintfmt(int (*putch)(int), const char *fmt, va_list vl) {
     } else if (*fmt == '%') {
       in_format = 1;
     } else {
-      putch(*fmt);
+      putch(&buffer[tail++], *fmt);
       pos++;
     }
   }
@@ -127,7 +129,6 @@ int printf(const char *s, ...) {
   int res = 0;
   va_list vl;
   va_start(vl, s);
-  tail = 0;
   res = vprintfmt(putchar, s, vl);
   va_end(vl);
   return res;

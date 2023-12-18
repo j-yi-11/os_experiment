@@ -111,7 +111,7 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
         uint64_t physical_stack = alloc_page();
         task[i]->mm.user_stack = physical_stack;
         task[i]->sscratch = read_csr(sscratch);
-        create_mapping((uint64_t*)root_page_table, 0x1002000, physical_stack, PAGE_SIZE, PTE_V | PTE_R | PTE_W | PTE_U);
+        create_mapping((uint64_t*)root_page_table, 0x1001000, physical_stack, PAGE_SIZE, PTE_V | PTE_R | PTE_W | PTE_U);
         memcpy((uint64_t *)physical_stack, (uint64_t *)current->mm.user_stack, PAGE_SIZE);
 
         task[i]->mm.vm = kmalloc(sizeof(struct vm_area_struct));
@@ -159,10 +159,10 @@ struct ret_info syscall(uint64_t syscall_num, uint64_t arg0, uint64_t arg1, uint
             kfree(vma);
         }
 
-        write_csr(sscratch, 0x1002000 + PAGE_SIZE);
+        write_csr(sscratch, 0x1001000 + PAGE_SIZE);
 
         current->mm.user_program_start = get_program_address((char *)arg0);
-        create_mapping((uint64_t*)root_page_table, 0x1000000, current->mm.user_program_start, PAGE_SIZE * 2, PTE_V | PTE_R | PTE_X | PTE_U | PTE_W);
+        create_mapping((uint64_t*)root_page_table, 0x1000000, current->mm.user_program_start, PAGE_SIZE, PTE_V | PTE_R | PTE_X | PTE_U | PTE_W);
 
         asm volatile ("sfence.vma");
         sp_ptr[16] = 0x1000000;

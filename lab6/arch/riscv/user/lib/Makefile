@@ -11,7 +11,7 @@ OBJ = $(patsubst %.c,%.o,$(C_SRC))
 all: $(OBJ)
 
 %.o:%.c
-	${CC}  ${CFLAG}  -c $< -o $@
+	${CC}  ${CFLAG} -O0  -c $< -o $@
 
 clean:
 	$(shell rm src/*.o 2>/dev/null)

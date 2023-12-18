@@ -19,7 +19,7 @@ void handler_s(uint64_t cause, uint64_t epc, uint64_t sp) {
   else if (cause >> 63 == 0) {
     // instruction page fault
     if (cause == 0xc || cause == 0xd || cause == 0xf) {
-      // TODO: 
+      // DONE: 
       // 1. get the faulting address from stval register
 
       uint64_t stval;
@@ -27,7 +27,7 @@ void handler_s(uint64_t cause, uint64_t epc, uint64_t sp) {
 
       printf("Page fault! epc = 0x%016lx, stval = 0x%016lx\n", epc, stval);
 
-      // TODO: 
+      // DONE: 
       // 2. check whether the faulting address is in the range of a vm area
       // 3. check the permission of the vm area. The vma must be PTE_X/R/W according to the faulting cause, and also be PTE_V, PTE_U
       // 4. if the faulting address is valid, allocate physical pages, map it to the vm area, mark the vma mapped(vma->mapped = 1), and return

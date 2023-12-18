@@ -4,7 +4,7 @@
 #include "mm.h"
 
 int start_kernel() {
-  puts("ZJU OSLAB 6 3210103796 储宁奕 3210103803 蒋奕\n");
+  puts("ZJU OSLAB 6 3210103796 3210103803 储宁奕 蒋奕\n");
   
   slub_init();
   task_init();

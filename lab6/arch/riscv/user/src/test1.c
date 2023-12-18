@@ -6,6 +6,7 @@
 int strcmp(const char *a, const char *b);
 int getchar_until_valid();
 
+
 int main() {
   char program[][10] = {"hello", "malloc", "print", "guess"};
   char input[64];
@@ -14,7 +15,7 @@ int main() {
   for (;;) {
     n = 0;
 
-    printf("lab7@oslab $ ");
+    printf("lab6@oslab $ ");
     for (;;) {
       ch = getchar_until_valid();
       printf("%c", ch);
